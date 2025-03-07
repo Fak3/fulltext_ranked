@@ -1,0 +1,20 @@
+[project]
+name = "fulltext_ranking"
+version = "0.1"
+description = "postgres vs elasticsearch"
+authors = [
+    {name = "Evstifeev Roman", email = "someuniquename@gmail.com"},
+]
+dependencies = [
+    "django>=4.2.19",
+    "django-environ>=0.12.0",
+    "psycopg2-binary>=2.9.10",
+    "django-extensions>=3.2.3"
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false

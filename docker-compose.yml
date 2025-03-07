@@ -1,0 +1,66 @@
+name: pgtest
+
+x-podman:
+  in_pod: false
+
+networks:
+  pgtest-internal-net:
+    driver: bridge
+
+volumes:
+  # COMPOSE_PROJECT_NAME is automatically prefixed to the volume name by docker-compose
+  postgresql_data:
+    # default location is /var/lib/docker/volumes
+
+services:
+  postgres:
+    image: postgres:17.2-alpine3.21
+    userns_mode: "auto:uidmapping=70:@1001,gidmapping=70:@1001"
+    logging:
+      driver: none
+    environment:
+      # - DATABASE_URL=postgresql://pguser:password@postgres:5432/pgdb
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=pgdb
+      - POSTGRES_USER=pguser
+      - POSTGRES_PASSWORD=password
+    restart: on-failure
+    networks:
+      - pgtest-internal-net
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    ports:
+      - target: 5432 # inside container
+        published: 5432
+
+  # redis:
+  #   image: redis:5.0
+  #   restart: on-failure
+  #   logging:
+  #     driver: none
+  #   networks:
+  #     - pgtest-internal-net
+  #   ports:
+  #     - 6379:6379
+
+  # elasticsearch:
+  #   # After start, reset password with
+  #   # docker-compose exec -it elasticsearch elasticsearch-reset-password -u elastic
+  #
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.17.3
+  #   volumes:
+  #     - ./esdata:/usr/share/elasticsearch/data
+  #   environment:
+  #     # - bootstrap.memory_lock=true  # not supported
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #     - discovery.type=single-node
+  #
+  #     # Allow to run when disk is 95% full
+  #     - cluster.routing.allocation.disk.threshold_enabled=false
+  #   ports:
+  #     - "9300:9300"
+  #
+  #     # HTTP
+  #     - target: 9200 # inside container
+  #       published: 9200

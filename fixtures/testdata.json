@@ -1,0 +1,29 @@
+[
+{
+  "model": "pgtest.item",
+  "pk": 1,
+  "fields": {
+    "name": "top notch drill",
+    "description": "super cool machine",
+    "rating": 5
+  }
+},
+{
+  "model": "pgtest.item",
+  "pk": 2,
+  "fields": {
+    "name": "meh drill",
+    "description": "mediocre thing",
+    "rating": 2
+  }
+},
+{
+  "model": "pgtest.item",
+  "pk": 3,
+  "fields": {
+    "name": "good drill",
+    "description": "good thing",
+    "rating": 3
+  }
+}
+]
