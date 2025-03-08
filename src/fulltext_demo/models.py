@@ -65,7 +65,7 @@ class Item(django.db.models.Model):
                 f"@@ (websearch_to_tsquery('{language}', %s)) = true"
             )],
             params = [query_str, query_str],
-        )
+        ).order_by('-sortorder')
 
 
 class Category(django.db.models.Model):
