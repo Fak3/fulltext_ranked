@@ -17,6 +17,7 @@ class Item(django.db.models.Model):
     rating = PositiveSmallIntegerField(
         default=0, validators=[MinValueValidator(0), MaxValueValidator(10)]
     )
+    categories = ManyToManyField('Category', related_name='items')
 
     class Meta:
         indexes = [
@@ -54,15 +55,18 @@ class Item(django.db.models.Model):
             },
             select_params = [query],
 
-            where = [
-                (
-                    # f"to_tsvector('{language}', coalesce(description, '')) || to_tsvector('{language}', coalesce(name, '')) "
-                    f"to_tsvector('{language}', coalesce(description, '')) "
-                    f"@@ (websearch_to_tsquery('{language}', %s)) = true"
-                    " OR "
-                    f"to_tsvector('{language}', coalesce(name, '')) "
-                    f"@@ (websearch_to_tsquery('{language}', %s)) = true"
-                )
-            ],
+            where = [(
+                # f"to_tsvector('{language}', coalesce(description, '')) || to_tsvector('{language}', coalesce(name, '')) "
+                f"to_tsvector('{language}', coalesce(description, '')) "
+                f"@@ (websearch_to_tsquery('{language}', %s)) = true"
+                " OR "
+                f"to_tsvector('{language}', coalesce(name, '')) "
+                f"@@ (websearch_to_tsquery('{language}', %s)) = true"
+            )],
             params = [query, query],
         )
+
+
+class Category(django.db.models.Model):
+    name = CharField(max_length=1000)
+    description = TextField()
