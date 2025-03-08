@@ -71,4 +71,4 @@ class Item(django.db.models.Model):
 class Category(django.db.models.Model):
     name = CharField(max_length=1000)
     description = TextField()
-    parent = ForeignKey('self', null=True, blank=True, on_delete=CASCADE)
+    parent = ForeignKey('self', related_name='direct_kids', null=True, blank=True, on_delete=CASCADE)
