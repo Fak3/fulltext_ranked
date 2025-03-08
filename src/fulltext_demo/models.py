@@ -26,15 +26,18 @@ class Item(django.db.models.Model):
         ]
 
     @classmethod
-    def ranked_search(cls, query: str) -> QuerySet:
+    def pg_ranked_search(cls, query: str) -> QuerySet:
         """
-        Perform fulltext search in item name and description. Annotate each item with `sortorder`,
-        calcualted as balanced combination of 70% query match (ts_rank) and 30% item rating.
+        Perform postgres fulltext search in item name and description. Annotate each item
+        with `sortorder`, calcualted as balanced combination of 70% query match (ts_rank)
+        and 30% item rating.
 
+        Args:
+            query (str): String in websearch_to_tsquery postgres format. See
+                https://www.postgresql.org/docs/current/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
+                for reference.
+                Example: "drill OR hammer"
 
-        Parameter `query` is in websearch_to_tsquery postgres format. See https://www.postgresql.org/docs/current/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES for reference.
-
-        Example: "drill OR hammer"
         """
         language = 'russian'
 
