@@ -18,6 +18,7 @@ class Item(django.db.models.Model):
         default=0, validators=[MinValueValidator(0), MaxValueValidator(10)]
     )
     categories = ManyToManyField('Category', related_name='items')
+    flat_categories = ManyToManyField('Category', related_name='deep_items')
 
     class Meta:
         indexes = [
