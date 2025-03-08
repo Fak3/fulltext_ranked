@@ -7,7 +7,7 @@ from django.db.models.query import QuerySet
 
 from django.db.models import (
     ForeignKey, DateTimeField, NullBooleanField, ManyToManyField,
-    TextField, CharField, PositiveSmallIntegerField
+    TextField, CharField, PositiveSmallIntegerField, CASCADE
 )
 
 
@@ -71,3 +71,4 @@ class Item(django.db.models.Model):
 class Category(django.db.models.Model):
     name = CharField(max_length=1000)
     description = TextField()
+    parent = ForeignKey('self', null=True, blank=True, on_delete=CASCADE)
