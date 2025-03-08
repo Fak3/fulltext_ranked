@@ -20,3 +20,8 @@ license = {text = "MIT"}
 
 [tool.pdm]
 distribution = false
+
+[dependency-groups]
+debug = [
+    "ipdb>=0.13.13",
+]
