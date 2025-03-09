@@ -25,3 +25,7 @@ distribution = false
 debug = [
     "ipdb>=0.13.13",
 ]
+test = [
+    "pytest>=8.3.5",
+    "pytest-django>=4.10.0",
+]
