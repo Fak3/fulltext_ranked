@@ -2,12 +2,15 @@ import django.db.models
 
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models.query import QuerySet
+from django.db import transaction
+
 
 from django.db.models import (
     ForeignKey, DateTimeField, NullBooleanField, ManyToManyField,
-    TextField, CharField, PositiveSmallIntegerField, CASCADE
+    TextField, CharField, PositiveSmallIntegerField, CASCADE, AutoField, IntegerField
 )
 
 
@@ -18,7 +21,7 @@ class Item(django.db.models.Model):
         default=0, validators=[MinValueValidator(0), MaxValueValidator(10)]
     )
     categories = ManyToManyField('Category', related_name='items')
-    flat_categories = ManyToManyField('Category', related_name='deep_items')
+    # flat_categories = ManyToManyField('Category', related_name='deep_items')
 
     class Meta:
         indexes = [
@@ -70,6 +73,67 @@ class Item(django.db.models.Model):
 
 
 class Category(django.db.models.Model):
+    # id = AutoField(primary_key=True)
     name = CharField(max_length=1000)
     description = TextField()
     parent = ForeignKey('self', related_name='direct_kids', null=True, blank=True, on_delete=CASCADE)
+    ancestors = ArrayField(IntegerField(), null=True, blank=True)
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self._old_parent_id = self.parent_id
+
+    def __str__(self):
+        return f'{self.name}'
+
+    def save(self, *a, **kw):
+        """ Save, updating self.ancestors """
+
+        with transaction.atomic():
+            # Save myself with new parent, but still old ancestors.
+            super().save(*a, **kw)
+
+            if not kw.get('force_insert') and self._old_parent_id == self.parent_id:
+                # Force_insert is False, this object already exists in database.
+                # Parent hasn't been changed, skip updating ancestors.
+                return
+
+            cats: dict[int, Category] = Category.map()
+
+            # Update my ancestors.
+            self.ancestors = [x.id for x in cats[self.id].ancestors_list]
+
+            # Update ancestors of all my descendants.
+            for cat in cats[self.id].descendants_list:
+                # print(cat, cats[cat.id].ancestors_list)
+                cat.ancestors = [x.id for x in cats[cat.id].ancestors_list]
+                cat.save()
+
+            # Save myself with new ancestors.
+            super().save(*a, **dict(kw, force_insert=False))
+
+    @classmethod
+    def map(cls) -> dict[int, "Category"]:
+        """
+        Return dict id -> Category. Annotate each category with ancestors_list
+        and descendants_list. Only takes two SELECT queries. Used in save() method
+        to update ancestors when parent changes.
+        """
+        # Two queries: regular SELECT and prefetch SELECT
+        # We can actually build it in one query, but with prefetch_related it is simpler.
+        cats = {cat.id: cat for cat in cls.objects.prefetch_related('direct_kids')}
+
+        def iter_ancestors(cat):
+            while cat := cats.get(cats[cat.id].parent_id):
+                yield cat
+
+        def iter_descendants(cat):
+            for kid in cat.direct_kids.all():
+                yield kid
+                yield from iter_descendants(cats[kid.id])
+
+        for cat in cats.values():
+            cat.ancestors_list = list(iter_ancestors(cat))
+            cat.descendants_list = list(iter_descendants(cat))
+
+        return cats
