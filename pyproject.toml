@@ -11,7 +11,8 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "django-extensions>=3.2.3",
     "django-elasticsearch-dsl>=8.0",
-    "typer>=0.15.2"
+    "typer>=0.15.2",
+    "loguru>=0.7.3"
 ]
 requires-python = ">=3.11"
 readme = "README.md"
@@ -28,4 +29,5 @@ debug = [
 test = [
     "pytest>=8.3.5",
     "pytest-django>=4.10.0",
+    "pytest-env>=1.1.5",
 ]
