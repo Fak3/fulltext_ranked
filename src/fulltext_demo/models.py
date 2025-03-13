@@ -41,31 +41,51 @@ class Item(django.db.models.Model):
         query_str: str
     ) -> QuerySet:
         """
-        Perform postgres fulltext search in item name and description. Annotate each item
-        with `sortorder`, calcualted as balanced combination of 70% query match (ts_rank)
-        and 30% item rating.
+        Perform postgres fulltext search in item name. Annotate each item
+        with `sortorder`, calcualted as balanced combination of 50% query match (ts_rank)
+        and 50% item rating.
         """
         language = 'russian'
 
         return cls.objects.extra(
             select = {
-                "sortorder": (f"""
-                    ts_rank(
-                        to_tsvector('{language}', coalesce(description, '')) ||
-                        to_tsvector('{language}', coalesce(name, '')),
+                "sortorder": (
+                    # ts_rank ranges from 0.0 to 1.0
+                    # f"""
+                    # ts_rank(
+                    #     to_tsvector('{language}', coalesce(name, '')) ||
+                    #     to_tsvector('{language}', coalesce(description, '')),
+                    #     websearch_to_tsquery('{language}', %s)
+                    # )
+                    # """
+                    f"""
+                    ts_rank_cd(
+                        to_tsvector('{language}', coalesce(fulltext_demo_item.name, '')),
                         websearch_to_tsquery('{language}', %s)
-                    ) * 70"""  # Fulltext match affects 70% of sortorder
-                    "+ rating * 0.01 * 30"  # Item rating affects 30% of sortorder
+                    ) * 50
+                    """ # Fulltext match affects 50% of sortorder
+
+                    # TODO: ranking description easily hijacked by repetition of terms by
+                    # item author.
+                    # # ts_rank_cd (cover density) considers the proximity of lexemes to each other
+                    # f"""
+                    # +
+                    # ts_rank_cd(
+                    #     to_tsvector('{language}', coalesce(description, '')),
+                    #     websearch_to_tsquery('{language}', %s)
+                    # ) * 10
+                    # """
+                    "+ rating * 0.01 * 50"  # Item rating affects 50% of sortorder
                 )
             },
             select_params = [query_str],
 
             where = [(
                 # f"to_tsvector('{language}', coalesce(description, '')) || to_tsvector('{language}', coalesce(name, '')) "
-                f"to_tsvector('{language}', coalesce(description, '')) "
+                f"to_tsvector('{language}', coalesce(fulltext_demo_item.description, '')) "
                 f"@@ (websearch_to_tsquery('{language}', %s)) = true"
                 " OR "
-                f"to_tsvector('{language}', coalesce(name, '')) "
+                f"to_tsvector('{language}', coalesce(fulltext_demo_item.name, '')) "
                 f"@@ (websearch_to_tsquery('{language}', %s)) = true"
             )],
             params = [query_str, query_str],
