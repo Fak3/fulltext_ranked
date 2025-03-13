@@ -97,6 +97,17 @@ class Category(django.db.models.Model):
     name = CharField(max_length=1000)
     description = TextField()
     parent = ForeignKey('self', related_name='direct_kids', null=True, blank=True, on_delete=CASCADE)
+
+    # Ancestors are automatically updated in save() when parent changes.
+    #
+    # Used in queries for items in all subcategories:
+    # >> items = Item.objects.filter(
+    # ..     Q(categories=tools) | Q(categories__ancestors__contains=[tools.id])
+    # .. )
+    #
+    # TODO: Would index do anything on ancestors?
+    # explain analyze SELECT * FROM "fulltext_demo_category"
+    # WHERE ("fulltext_demo_category"."ancestors" @> (ARRAY[5])::integer[]);
     ancestors = ArrayField(IntegerField(), null=True, blank=True)
 
     def __init__(self, *a, **kw):
